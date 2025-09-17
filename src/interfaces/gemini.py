@@ -1,7 +1,7 @@
 import mimetypes
 from google import genai
 from google.genai import types
-from core.config import settings
+from ..core.config import settings
 
 def save_binary_file(file_name, data):
     f = open(file_name, "wb")

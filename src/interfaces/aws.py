@@ -1,5 +1,5 @@
 import boto3
-from core.config import settings
+from ..core.config import settings
 from datetime import datetime, timedelta
 
 s3 = boto3.client('s3',
@@ -10,11 +10,11 @@ s3 = boto3.client('s3',
     bucket_name=settings.aws_bucket_name
 )
 
-def upload_file(file_content: str, file_name: str, image_name: str):
+def upload_image(file_content: str, file_name: str, image_name: str):
 
   content_type = image_name.split('.')[-1]
 
-  s3.upload_file(
+  s3.put_object(
       Bucket=settings.aws_bucket_name,
       Key=file_name,
       Body=file_content,

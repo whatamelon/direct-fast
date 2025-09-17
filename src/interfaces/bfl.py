@@ -1,7 +1,7 @@
 
 import requests
 import time
-from core.config import settings
+from ..core.config import settings
 
 # 이미지 수정
 def bfl_image_edit(img_str: str, prompt: str):

@@ -27,13 +27,21 @@ class Settings(BaseSettings):
     jwt_secret_key: str = Field(default="", env="JWT_SECRET_KEY")
     
     # 외부 서비스 설정
-    cafe24_api_key: Optional[str] = Field(default=None, env="CAFE24_API_KEY")
+    # 카페24 API 설정
+    cafe24_mall_id: Optional[str] = Field(default=None, env="CAFE24_MALL_ID")
+    cafe24_client_id: Optional[str] = Field(default=None, env="CAFE24_CLIENT_ID")
+    cafe24_client_secret: Optional[str] = Field(default=None, env="CAFE24_CLIENT_SECRET")
+    cafe24_refresh_token: Optional[str] = Field(default=None, env="CAFE24_REFRESH_TOKEN")
+    cafe24_auth_key: Optional[str] = Field(default=None, env="CAFE24_AUTH_KEY")
+    
+    # 기타 API 설정
     gemini_api_key: Optional[str] = Field(default=None, env="GEMINI_API_KEY")
+    google_sheet_api_key: Optional[str] = Field(default=None, env="GOOGLE_SHEET_API_KEY")
     bfl_api_key: Optional[str] = Field(default=None, env="BFL_API_KEY")
     aws_access_key_id: Optional[str] = Field(default=None, env="AWS_ACCESS_KEY_ID")
     aws_secret_access_key: Optional[str] = Field(default=None, env="AWS_SECRET_ACCESS_KEY")
-    aws_bucket_name: Optional[str] = Field(default=None, env="AWS_BUCKET_NAME")
-    aws_region: Optional[str] = Field(default=None, env="AWS_REGION")
+    aws_s3_bucket: Optional[str] = Field(default=None, env="AWS_S3_BUCKET")
+    aws_region: Optional[str] = Field(default=None, env="AWS_REGION_NAME")
     aws_endpoint_url: Optional[str] = Field(default=None, env="AWS_ENDPOINT_URL")
     
     # 로깅 설정
@@ -43,6 +51,7 @@ class Settings(BaseSettings):
         env_file = ".env"
         env_file_encoding = "utf-8"
         case_sensitive = False
+        extra = "ignore"  # 추가 필드 무시
 
 # 전역 설정 인스턴스 생성
 settings = Settings()
