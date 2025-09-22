@@ -60,6 +60,25 @@ uv run start
 uv run python main.py
 ```
 
+또는 uv로 관리:
+
+```bash
+# 1) uv가 관리하는 최신 파이썬을 프로젝트에 고정 (OpenSSL 포함된 빌드)
+uv python pin 3.11
+
+# 2) 프로젝트 가상환경 생성
+uv venv
+
+# 3) (선택) 터미널에서 활성화
+source .venv/bin/activate
+
+# 4) 의존성 설치 (여기서 google-api-python-client도 같이 설치됨)
+uv pip install -r requirements.txt
+
+# 5) uv로 실행(가상환경 자동 사용)
+uv run -m direct_agent.src.events.meta-catalog-ad.index
+```
+
 ### 4. API 문서 확인
 
 서버 실행 후 다음 URL에서 API 문서를 확인할 수 있습니다:

@@ -47,8 +47,8 @@ class GoogleSheetInterface:
             token_path: 토큰 저장 파일 경로
         """
         self.settings = get_settings()
-        self.credentials_path = credentials_path or os.getenv('GOOGLE_CREDENTIALS_PATH')
-        self.token_path = token_path or os.getenv('GOOGLE_TOKEN_PATH', 'token.json')
+        self.credentials_path = "./src/assets/dept-meta-advertise-a17cb36a4928.json"
+        self.token_path = "./src/assets/token.json"
         self.service = None
         self._authenticate()
     
@@ -56,38 +56,14 @@ class GoogleSheetInterface:
         """Google Sheets API 인증 수행"""
         try:
             creds = None
-            
-            # 토큰 파일이 존재하는 경우 로드
-            if os.path.exists(self.token_path):
-                creds = Credentials.from_authorized_user_file(self.token_path, SCOPES)
-            
             # 유효한 자격 증명이 없는 경우 새로 인증
             if not creds or not creds.valid:
-                if creds and creds.expired and creds.refresh_token:
-                    creds.refresh(Request())
-                else:
-                    # 서비스 계정 키 파일이 있는 경우 사용
-                    service_account_path = os.getenv('GOOGLE_SERVICE_ACCOUNT_PATH')
-                    if service_account_path and os.path.exists(service_account_path):
-                        creds = ServiceAccountCredentials.from_service_account_file(
-                            service_account_path, scopes=SCOPES
-                        )
-                    elif self.credentials_path and os.path.exists(self.credentials_path):
-                        # OAuth2 클라이언트 자격 증명 사용
-                        flow = InstalledAppFlow.from_client_secrets_file(
-                            self.credentials_path, SCOPES
-                        )
-                        creds = flow.run_local_server(port=0)
-                    else:
-                        raise GoogleSheetError(
-                            "Google 인증 파일을 찾을 수 없습니다. "
-                            "GOOGLE_CREDENTIALS_PATH 또는 GOOGLE_SERVICE_ACCOUNT_PATH 환경변수를 설정하세요."
-                        )
-                
-                # 토큰 저장
-                with open(self.token_path, 'w') as token:
-                    token.write(creds.to_json())
-            
+              # 서비스 계정 키 파일이 있는 경우 사용
+              service_account_path = "./src/assets/dept-meta-advertise-a17cb36a4928.json"
+              if service_account_path and os.path.exists(service_account_path):
+                  creds = ServiceAccountCredentials.from_service_account_file(
+                      service_account_path, scopes=SCOPES
+                  )
             # Google Sheets API 서비스 빌드
             self.service = build('sheets', 'v4', credentials=creds)
             logger.info("Google Sheets API 인증 성공")

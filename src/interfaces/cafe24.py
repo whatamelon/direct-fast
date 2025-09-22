@@ -8,7 +8,7 @@ import requests
 import logging
 from typing import Dict, Any, Optional, List, Union
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timedelta
 from enum import Enum
 
 from ..core.config import get_settings
@@ -37,11 +37,12 @@ class ProductDisplayStatus(str, Enum):
 
 @dataclass
 class Cafe24Credentials:
-    """카페24 API 인증 정보"""
-    mall_id: str
-    client_id: str
-    client_secret: str
-    refresh_token: str
+    """카페24 API 인증 정보 (새로운 방식)"""
+    auth_key: str
+    token_url: str
+    stage: str
+    brand_id: str
+    brand_domain: str
 
 
 @dataclass
@@ -86,35 +87,49 @@ class Product:
 
 
 class Cafe24APIClient:
-    """카페24 API 공통 클라이언트"""
+    """카페24 API 공통 클라이언트 (새로운 인증 방식)"""
     
     def __init__(self, credentials: Cafe24Credentials):
         self.credentials = credentials
         self.access_token: Optional[str] = None
-        self.base_url = f"https://{credentials.mall_id}.cafe24api.com/api/v2"
+        self.token_expires_at: Optional[datetime] = None
         
     def _get_access_token(self) -> str:
-        """액세스 토큰을 발급받습니다."""
-        url = f"{self.base_url}/oauth/token"
-        data = {
-            'grant_type': 'refresh_token',
-            'refresh_token': self.credentials.refresh_token,
-            'client_id': self.credentials.client_id,
-            'client_secret': self.credentials.client_secret
-        }
-        
+        """새로운 방식으로 액세스 토큰을 발급받습니다."""
         try:
-            response = requests.post(url, data=data)
-            response.raise_for_status()
-            token_data = response.json()
-            return token_data['access_token']
-        except requests.exceptions.RequestException as e:
-            logger.error(f"액세스 토큰 발급 실패: {e}")
-            raise Cafe24APIError(f"액세스 토큰 발급 실패: {e}")
+            url = f"{self.credentials.token_url}?stage={self.credentials.stage}&brand_id={self.credentials.brand_id}"
+            headers = {
+                'X-MGR-AUTH': f'Basic {self.credentials.auth_key}',
+                'X-Mgr-Product': 'direct',
+                'Brand-Domain': self.credentials.brand_domain,
+            }
+            
+            response = requests.get(url, headers=headers)
+            
+            if response.status_code == 200:
+                access_token = response.text
+                expires_in = 3600  # 기본 1시간
+                
+                # 토큰 만료 시간 설정
+                self.token_expires_at = datetime.now() + timedelta(seconds=expires_in - 300)  # 5분 여유
+                
+                logger.info("카페24 액세스 토큰 발급 성공")
+                return access_token
+            else:
+                raise Cafe24APIError(f"토큰 발급 실패: {response.status_code} - {response.text}")
+                
+        except Exception as e:
+            logger.error(f"토큰 발급 중 오류 발생: {e}")
+            raise Cafe24APIError(f"토큰 발급 실패: {e}")
     
     def _ensure_access_token(self) -> None:
         """액세스 토큰이 유효한지 확인하고 필요시 갱신합니다."""
-        if not self.access_token:
+        now = datetime.now()
+        
+        # 토큰이 없거나 만료된 경우 새로 발급
+        if (not self.access_token or 
+            not self.token_expires_at or 
+            now >= self.token_expires_at):
             self.access_token = self._get_access_token()
     
     def _make_request(
@@ -130,10 +145,11 @@ class Cafe24APIClient:
         headers = {
             'Authorization': f'Bearer {self.access_token}',
             'Content-Type': 'application/json',
-            'X-Cafe24-Api-Version': '2022-03-01'
+            'X-Cafe24-Api-Version': '2025-09-01'
         }
         
-        url = f"{self.base_url}{endpoint}"
+        # 카페24 API 엔드포인트 구성 (실제 카페24 API URL 사용)
+        url = f"https://relaymmemory.cafe24api.com/api/v2{endpoint}"
         
         try:
             response = requests.request(
@@ -152,6 +168,22 @@ class Cafe24APIClient:
 
 class ProductAPI(Cafe24APIClient):
     """제품 관련 API 클래스"""
+    
+    def get_products_count(self) -> Dict[str, Any]:
+        """
+        전체 상품 수를 조회합니다.
+        
+        Returns:
+            상품 수 정보
+        """
+        try:
+            response = self._make_request('GET', '/products/count')
+            logger.info(f"전체 상품 수 조회 완료: {response.get('count', 0)}")
+            return response
+            
+        except Exception as e:
+            logger.error(f"상품 수 조회 실패: {e}")
+            raise Cafe24APIError(f"상품 수 조회 실패: {e}")
     
     def get_products(
         self,
@@ -277,19 +309,21 @@ class ProductAPI(Cafe24APIClient):
 
 
 def create_cafe24_client(
-    mall_id: Optional[str] = None,
-    client_id: Optional[str] = None,
-    client_secret: Optional[str] = None,
-    refresh_token: Optional[str] = None
+    auth_key: Optional[str] = None,
+    token_url: Optional[str] = None,
+    stage: Optional[str] = None,
+    brand_id: Optional[str] = None,
+    brand_domain: Optional[str] = None
 ) -> ProductAPI:
     """
-    카페24 API 클라이언트를 생성합니다.
+    카페24 API 클라이언트를 생성합니다 (새로운 인증 방식).
     
     Args:
-        mall_id: 쇼핑몰 ID (설정에서 자동 로드)
-        client_id: 클라이언트 ID (설정에서 자동 로드)
-        client_secret: 클라이언트 시크릿 (설정에서 자동 로드)
-        refresh_token: 리프레시 토큰 (설정에서 자동 로드)
+        auth_key: 인증 키 (설정에서 자동 로드)
+        token_url: 토큰 발급 URL (설정에서 자동 로드)
+        stage: 스테이지 (설정에서 자동 로드)
+        brand_id: 브랜드 ID (설정에서 자동 로드)
+        brand_domain: 브랜드 도메인 (설정에서 자동 로드)
     
     Returns:
         ProductAPI 인스턴스
@@ -297,16 +331,16 @@ def create_cafe24_client(
     settings = get_settings()
     
     credentials = Cafe24Credentials(
-        mall_id=mall_id or settings.cafe24_mall_id or "",
-        client_id=client_id or settings.cafe24_client_id or "",
-        client_secret=client_secret or settings.cafe24_client_secret or "",
-        refresh_token=refresh_token or settings.cafe24_refresh_token or ""
+        auth_key=auth_key or settings.cafe24_auth_key or "",
+        token_url=token_url or settings.cafe24_token_url,
+        stage=stage or settings.cafe24_stage,
+        brand_id=brand_id or settings.cafe24_brand_id,
+        brand_domain=brand_domain or settings.cafe24_brand_domain
     )
     
     # 필수 정보 검증
-    if not all([credentials.mall_id, credentials.client_id, 
-                credentials.client_secret, credentials.refresh_token]):
-        raise ValueError("카페24 API 인증 정보가 부족합니다. 환경변수를 확인해주세요.")
+    if not credentials.auth_key:
+        raise Cafe24APIError("카페24 API 인증 키가 설정되지 않았습니다. CAFE24_AUTH_KEY 환경변수를 확인해주세요.")
     
     return ProductAPI(credentials)
 

@@ -41,3 +41,7 @@ Pillow>=10.0.0  # 이미지 처리 라이브러리 (이미 있지만 명시적�
 google-api-python-client>=2.0.0  # Google API 클라이언트
 google-auth-httplib2>=0.1.0  # Google 인증용 HTTP 라이브러리
 google-auth-oauthlib>=1.0.0  # Google OAuth2 라이브러리
+
+# 폰트 처리
+fonttools>=4.60.0  # 폰트 처리 라이브러리
+brotli>=1.1.0  # 폰트 처리 라이브러리

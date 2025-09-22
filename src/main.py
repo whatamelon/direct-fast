@@ -5,7 +5,7 @@ import uvicorn
 import asyncio
 from contextlib import asynccontextmanager
 
-from .core.config import settings, validate_required_settings
+from .core.config import settings
 from .core.scheduler import start_scheduler, stop_scheduler, get_scheduler_status, get_all_jobs
 from .tasks.jobs import register_default_jobs, get_job_list, get_scheduler_info
 
@@ -315,7 +315,6 @@ async def get_scheduler_stats():
 # 서버 실행
 if __name__ == "__main__":
     # 환경변수 검증
-    validate_required_settings()
     
     print(f"🚀 {settings.app_name} v{settings.app_version} 시작 중...")
     print(f"📍 서버 주소: http://{settings.host}:{settings.port}")
