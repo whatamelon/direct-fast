@@ -17,6 +17,9 @@ Pillow>=10.0.0
 
 # HTTP 라이브러리 (urllib3 버전 충돌 해결)
 urllib3>=2.0.0
+pyopenssl>=25.3.0
+pyasn1>=0.6.1
+ndg-httpsclient>=0.5.1
 
 # 환경변수 관리
 python-dotenv>=1.0.0  # .env 파일 로딩을 위한 경우

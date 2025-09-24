@@ -76,7 +76,20 @@ source .venv/bin/activate
 uv pip install -r requirements.txt
 
 # 5) uv로 실행(가상환경 자동 사용)
-uv run -m direct_agent.src.events.meta-catalog-ad.index
+uv run -m src.events.meta-catalog-ad.index
+
+
+# 서버 실행
+python -m src.main
+
+# 또는
+uvicorn src.main:app --host 0.0.0.0 --port 8000
+
+# 스케줄러 상태 확인
+curl http://localhost:8000/scheduler/status
+
+# 등록된 작업 목록 확인
+curl http://localhost:8000/scheduler/jobs
 ```
 
 ### 4. API 문서 확인

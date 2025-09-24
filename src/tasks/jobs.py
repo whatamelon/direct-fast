@@ -171,52 +171,53 @@ def register_default_jobs():
         if not result:
             logger.error("헬스 체크 작업 등록 실패")
         
-        # 데이터 정리 작업 (매일 새벽 2시)
-        add_cron_job(
-            func=data_cleanup_job,
-            job_id="data_cleanup",
-            hour=2,
-            minute=0,
-            name="데이터 정리"
-        )
+        # # 데이터 정리 작업 (매일 새벽 2시)
+        # add_cron_job(
+        #     func=data_cleanup_job,
+        #     job_id="data_cleanup",
+        #     hour=2,
+        #     minute=0,
+        #     name="데이터 정리"
+        # )
         
-        # 백업 작업 (매주 일요일 새벽 3시)
-        add_cron_job(
-            func=backup_job,
-            job_id="backup",
-            day_of_week="sun",
-            hour=3,
-            minute=0,
-            name="시스템 백업"
-        )
+        # # 백업 작업 (매주 일요일 새벽 3시)
+        # add_cron_job(
+        #     func=backup_job,
+        #     job_id="backup",
+        #     day_of_week="sun",
+        #     hour=3,
+        #     minute=0,
+        #     name="시스템 백업"
+        # )
         
-        # API 동기화 작업 (매 30분마다)
-        result = add_interval_job(
-            func=api_sync_job,
-            job_id="api_sync",
-            minutes=30,
-            name="API 동기화"
-        )
-        if not result:
-            logger.error("API 동기화 작업 등록 실패")
+        # # API 동기화 작업 (매 30분마다)
+        # result = add_interval_job(
+        #     func=api_sync_job,
+        #     job_id="api_sync",
+        #     minutes=30,
+        #     name="API 동기화"
+        # )
+        # if not result:
+        #     logger.error("API 동기화 작업 등록 실패")
         
-        # 알림 작업 (매일 오전 9시)
-        add_cron_job(
-            func=notification_job,
-            job_id="notification",
-            hour=9,
-            minute=0,
-            name="일일 알림"
-        )
+        # # 알림 작업 (매일 오전 9시)
+        # add_cron_job(
+        #     func=notification_job,
+        #     job_id="notification",
+        #     hour=9,
+        #     minute=0,
+        #     name="일일 알림"
+        # )
         
-        # 메타 카탈로그 광고 이미지 생성 작업 (매일 새벽 3시)
-        add_cron_job(
+        # 메타 카탈로그 광고 이미지 생성 작업 (매시간 정시)
+        result = add_cron_job(
             func=meta_catalog_ad_job,
             job_id="meta_catalog_ad",
-            hour=3,
-            minute=0,
+            minute=0,  # 매시간 0분에 실행 (정시)
             name="메타 카탈로그 광고 이미지 생성"
         )
+        if not result:
+            logger.error("메타 카탈로그 광고 이미지 생성 작업 등록 실패")
         
         logger.info("기본 작업들이 스케줄러에 등록되었습니다.")
         return True
@@ -365,12 +366,19 @@ def track_execution(job_id: str):
 
 
 # 메타 카탈로그 광고 이미지 생성 작업
-async def meta_catalog_ad_job():
-    """메타 카탈로그 광고 이미지 생성 작업 (매일 새벽 3시 실행)"""
+async def meta_catalog_ad_job(spreadsheet_id: str = None, generate_images: bool = True):
+    """메타 카탈로그 광고 이미지 생성 작업 (1시간마다 실행)"""
     try:
         import importlib.util
         import sys
         import os
+        
+        # 기본 스프레드시트 ID 설정 (설정이 없으면 기본값 사용)
+        if not spreadsheet_id:
+            # 기본 스프레드시트 URL에서 ID 추출
+            default_url = "https://docs.google.com/spreadsheets/d/1fUMh5PimIjvI6_ef2VK6zQa_NC9xGvUnhkLK2qs1r5k/edit?gid=0#gid=0"
+            from ..interfaces.google_sheet import get_spreadsheet_id_from_url
+            spreadsheet_id = get_spreadsheet_id_from_url(default_url)
         
         # 동적으로 모듈 로드
         module_path = os.path.join(os.path.dirname(__file__), "..", "events", "meta-catalog-ad", "index.py")
@@ -378,9 +386,9 @@ async def meta_catalog_ad_job():
         meta_module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(meta_module)
         meta_job = meta_module.meta_catalog_ad_job
-        logger.info("🚀 메타 카탈로그 광고 이미지 생성 작업 시작")
+        logger.info(f"🚀 메타 카탈로그 광고 이미지 생성 작업 시작 (스프레드시트: {spreadsheet_id})")
         
-        result = await meta_job()
+        result = await meta_job(spreadsheet_id, generate_images=generate_images)
         
         logger.info(f"메타 카탈로그 광고 이미지 생성 작업 완료: {result}")
         return result

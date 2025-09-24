@@ -476,7 +476,11 @@ brandNames = [
     "brandNameEng": "EGOIST",
   },
   {
-    "brandNameKor": "잇미샤",
+    "brandNameKor": "미차",
+    "brandNameEng": "MICHAA",
+  },
+  {
+    "brandNameKor": "잇미차",
     "brandNameEng": "it MICHAA",
   },
   {

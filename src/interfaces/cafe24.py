@@ -169,15 +169,30 @@ class Cafe24APIClient:
 class ProductAPI(Cafe24APIClient):
     """제품 관련 API 클래스"""
     
-    def get_products_count(self) -> Dict[str, Any]:
+    def get_products_count(self, limit: Optional[int] = None, display: Optional[bool] = None, selling: Optional[bool] = None, stock_quantity_max: Optional[int] = None, stock_quantity_min: Optional[int] = None, use_inventory: Optional[bool] = None) -> Dict[str, Any]:
         """
         전체 상품 수를 조회합니다.
         
         Returns:
             상품 수 정보
         """
+        params = {}
+        
+        if limit is not None:
+            params['limit'] = limit
+        if display is not None:
+            params['display'] = 'T' if display else 'F'
+        if selling is not None:
+            params['selling'] = 'T' if selling else 'F'
+        if stock_quantity_max is not None:
+            params['stock_quantity_max'] = stock_quantity_max
+        if stock_quantity_min is not None:
+            params['stock_quantity_min'] = stock_quantity_min
+        if use_inventory is not None:
+            params['use_inventory'] = 'T' if use_inventory else 'F'
+
         try:
-            response = self._make_request('GET', '/products/count')
+            response = self._make_request('GET', '/products/count', params=params)
             logger.info(f"전체 상품 수 조회 완료: {response.get('count', 0)}")
             return response
             
@@ -199,6 +214,9 @@ class ProductAPI(Cafe24APIClient):
         created_end_date: Optional[str] = None,
         updated_start_date: Optional[str] = None,
         updated_end_date: Optional[str] = None,
+        stock_quantity_max: Optional[int] = None,
+        stock_quantity_min: Optional[int] = None,
+        use_inventory: Optional[bool] = None,
         embed: Optional[List[str]] = None
     ) -> Dict[str, Any]:
         """
@@ -248,6 +266,12 @@ class ProductAPI(Cafe24APIClient):
             params['updated_start_date'] = updated_start_date
         if updated_end_date is not None:
             params['updated_end_date'] = updated_end_date
+        if stock_quantity_max is not None:
+            params['stock_quantity_max'] = stock_quantity_max
+        if stock_quantity_min is not None:
+            params['stock_quantity_min'] = stock_quantity_min
+        if use_inventory is not None:
+            params['use_inventory'] = 'T' if use_inventory else 'F'
         if embed is not None:
             params['embed'] = ','.join(embed)
         

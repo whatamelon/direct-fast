@@ -51,12 +51,13 @@ def calculate_text_height(
         
         lines.append(current_line)
     else:
-        # 브랜드명용: 기존 \n 기준 줄바꿈
+        # 브랜드명용: \n 기준 줄바꿈 (모든 줄 포함)
         lines = text.split("\n")
+        # print(f"높이 계산 - 브랜드명 줄바꿈: 원본='{text}', 분할된 줄들={lines}")
     
-    # 빈 줄이 아닌 줄의 개수만 계산
-    valid_lines = [line for line in lines if line.strip()]
-    return len(valid_lines) * line_height
+    # 모든 줄의 개수 계산 (빈 줄도 포함하여 정확한 높이 계산)
+    total_lines = len(lines)
+    return total_lines * line_height
 
 
 def draw_wrapped_text(
@@ -96,12 +97,16 @@ def draw_wrapped_text(
         
         lines.append(current_line)
     else:
-        # 브랜드명용: 기존 \n 기준 줄바꿈
+        # 브랜드명용: \n 기준 줄바꿈 (빈 줄도 포함)
         lines = text.split("\n")
+        # print(f"브랜드명 줄바꿈 처리: 원본='{text}', 분할된 줄들={lines}")
     
     # 각 줄을 가운데 정렬하여 그리기
     current_y = y
-    for line in lines:
+    for i, line in enumerate(lines):
+        # print(f"줄 {i+1} 처리: '{line}' (길이: {len(line)})")
+        
+        # 텍스트가 있는 줄만 그리기 (빈 줄은 그냥 공간만 확보)
         if line.strip():  # 빈 줄이 아닌 경우만 그리기
             # 텍스트 크기 측정
             bbox = draw.textbbox((0, 0), line, font=font)
@@ -112,8 +117,9 @@ def draw_wrapped_text(
             
             # 텍스트 그리기
             draw.text((text_x, current_y), line, font=font, fill=fill_color)
-            print(f"텍스트 그리기: '{line}' at ({text_x}, {current_y}) with color {fill_color}")
+            # print(f"텍스트 그리기: '{line}' at ({text_x}, {current_y}) with color {fill_color}")
         
+        # 모든 줄에 대해 line_height만큼 y 좌표 이동 (빈 줄도 포함)
         current_y += line_height
     
     return current_y - y  # 실제 사용된 높이 반환
@@ -217,9 +223,9 @@ async def meta_advertise_image(
                 dept_img = background
             elif dept_img.mode != 'RGB':
                 dept_img = dept_img.convert('RGB')
-            print(f"DEPT 이미지 로드 성공: {dept_img.size}, 모드: {dept_img.mode}")
+            # print(f"DEPT 이미지 로드 성공: {dept_img.size}, 모드: {dept_img.mode}")
         except Exception as e:
-            print(f"DEPT 이미지 로드 실패: {e}")
+            # print(f"DEPT 이미지 로드 실패: {e}")
             # 기본 DEPT 이미지 생성 (흰색 배경에 검은색 텍스트)
             dept_img = Image.new('RGB', (120, 40), (255, 255, 255))
             dept_draw = ImageDraw.Draw(dept_img)
@@ -275,25 +281,19 @@ async def meta_advertise_image(
             # 폰트 로드 시도
             if os.path.exists(brand_font_path):
                 brand_font = ImageFont.truetype(brand_font_path, 48)
-                print(f"브랜드 폰트 로드 성공: Pretendard-Bold.ttf (48px)")
-            else:
-                print(f"브랜드 폰트 파일을 찾을 수 없습니다: {brand_font_path}")
+                # print(f"브랜드 폰트 로드 성공: Pretendard-Bold.ttf (48px)")
             
             if os.path.exists(product_font_path):
                 product_font = ImageFont.truetype(product_font_path, 32)
-                print(f"상품명 폰트 로드 성공: Pretendard-Regular.ttf (32px)")
-            else:
-                print(f"상품명 폰트 파일을 찾을 수 없습니다: {product_font_path}")
+                # print(f"상품명 폰트 로드 성공: Pretendard-Regular.ttf (32px)")
             
             if os.path.exists(price_font_path):
                 price_font = ImageFont.truetype(price_font_path, 35)
-                print(f"가격 폰트 로드 성공: Pretendard-Bold.ttf (35px)")
-            else:
-                print(f"가격 폰트 파일을 찾을 수 없습니다: {price_font_path}")
+                # print(f"가격 폰트 로드 성공: Pretendard-Bold.ttf (35px)")
             
             # 폰트 로드 실패 시 대체 폰트 시도
             if brand_font is None or product_font is None or price_font is None:
-                print("일부 폰트 로드 실패 - 대체 폰트 시도 중...")
+                # print("일부 폰트 로드 실패 - 대체 폰트 시도 중...")
                 
                 # 시스템 폰트 경로들
                 system_font_paths = [
@@ -325,27 +325,27 @@ async def meta_advertise_image(
                 # 대체 폰트 적용
                 if brand_font is None and bold_font_path:
                     brand_font = ImageFont.truetype(bold_font_path, 48)
-                    print(f"브랜드 대체 폰트 로드: {bold_font_path}")
+                    # print(f"브랜드 대체 폰트 로드: {bold_font_path}")
                 
                 if product_font is None and regular_font_path:
                     product_font = ImageFont.truetype(regular_font_path, 32)
-                    print(f"상품명 대체 폰트 로드: {regular_font_path}")
+                    # print(f"상품명 대체 폰트 로드: {regular_font_path}")
                 
                 if price_font is None and bold_font_path:
                     price_font = ImageFont.truetype(bold_font_path, 35)
-                    print(f"가격 대체 폰트 로드: {bold_font_path}")
+                    # print(f"가격 대체 폰트 로드: {bold_font_path}")
             
             # 모든 폰트 로드 실패 시 기본 폰트 사용
             if brand_font is None:
-                print("브랜드 폰트 로드 실패 - 기본 폰트 사용")
+                # print("브랜드 폰트 로드 실패 - 기본 폰트 사용")
                 brand_font = ImageFont.load_default()
             
             if product_font is None:
-                print("상품명 폰트 로드 실패 - 기본 폰트 사용")
+                # print("상품명 폰트 로드 실패 - 기본 폰트 사용")
                 product_font = ImageFont.load_default()
             
             if price_font is None:
-                print("가격 폰트 로드 실패 - 기본 폰트 사용")
+                # print("가격 폰트 로드 실패 - 기본 폰트 사용")
                 price_font = ImageFont.load_default()
                 
         except Exception as e:
@@ -396,7 +396,7 @@ async def meta_advertise_image(
         text_group_start_y = (options.height - total_text_group_height) // 2
         
         # 브랜드 한글명 (굵은 글씨, 검은색)
-        print(f"브랜드명 렌더링: {brandNameKor}")
+        # print(f"브랜드명 렌더링: {brandNameKor}")
         kor_text_height = draw_wrapped_text(
             draw,
             brandNameKor or "",
@@ -410,7 +410,7 @@ async def meta_advertise_image(
         )
         
         # 상품명 (일반 글씨, 회색, 자동 줄바꿈 적용)
-        print(f"상품명 렌더링: {product_name}")
+        # print(f"상품명 렌더링: {product_name}")
         product_text_height = draw_wrapped_text(
             draw,
             product_name or "",
@@ -425,7 +425,7 @@ async def meta_advertise_image(
         
         # 가격 (굵은 글씨, 검은색)
         price_text = f"{int(float(sale_price)):,} ₩"
-        print(f"가격 렌더링: {price_text}")
+        # print(f"가격 렌더링: {price_text}")
         
         # 가격 텍스트의 바운딩 박스 계산
         bbox = draw.textbbox((0, 0), price_text, font=price_font)
@@ -453,7 +453,7 @@ async def meta_advertise_image(
         
         # S3에 업로드 (custom_product_code 사용)
         filename = custom_product_code if custom_product_code else str(item_id)
-        s3_key = f"meta_image/250922/{filename}.jpg"
+        s3_key = f"meta_image/{filename}.jpg"
         s3_url = upload_to_s3(s3_bucket, s3_key, canvas)
         
         return s3_url
@@ -468,7 +468,7 @@ if __name__ == "__main__":
     # 비동기 함수 실행 예시
     async def main():
         try:
-            result = await meta_advertise_image(
+            await meta_advertise_image(
                 item_id=12345,
                 image_url="https://example.com/product.jpg",
                 product_name="상품명입니다",
@@ -476,7 +476,7 @@ if __name__ == "__main__":
                 s3_bucket="your-bucket-name",
                 brandNameKor="브랜드명"
             )
-            print(f"생성된 이미지 URL: {result}")
+            # print(f"생성된 이미지 URL: {result}")
         except Exception as e:
             print(f"오류 발생: {e}")
     
